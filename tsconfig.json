@@ -1,5 +1,8 @@
 {
   "compilerOptions": {
+    "target": "ESNext",
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "Bundler",
     "strict": true,
     "noUncheckedIndexedAccess": true
   }
