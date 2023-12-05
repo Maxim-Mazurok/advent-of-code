@@ -5,7 +5,9 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@types/dedent": "^0.7.2",
     "@types/node": "^20.10.3",
+    "dedent": "^1.5.1",
     "typescript": "^5.3.2",
     "vitest": "^0.34.6"
   }
