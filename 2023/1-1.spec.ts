@@ -12,7 +12,7 @@ it("works", async () => {
   const lines = input.split("\n");
   let sum = 0;
   for (const line of lines) {
-    const digits = line.match(/\d/);
+    const digits = line.match(/\d/g);
 
     if (digits === null) {
       throw new Error("No digits found");
