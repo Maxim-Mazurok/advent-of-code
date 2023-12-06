@@ -1,0 +1,22 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`finds possible combos 2 1`] = `
+[
+  {
+    "path": "55|68 ",
+    "rangeEnd": 68,
+    "rangeStart": 55,
+    "sourceRangeEnd": 68,
+    "sourceRangeStart": 55,
+    "valueDifference": -2,
+  },
+  {
+    "path": "79|93 ",
+    "rangeEnd": 93,
+    "rangeStart": 79,
+    "sourceRangeEnd": 93,
+    "sourceRangeStart": 79,
+    "valueDifference": -2,
+  },
+]
+`;
