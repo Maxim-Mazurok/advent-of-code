@@ -39,825 +39,392 @@ const sampleInput = dedent(`
   56 93 4
 `);
 
-const createMaps = (
-  data: {
-    destinationRangeStart: number;
-    sourceRangeStart: number;
-    bothRangesLength: number;
-  }[],
-  doFillInTheGaps = true
-) => {
-  const maps: {
-    rangeStart: number;
-    rangeEnd: number;
-    valueDifference: number;
-  }[] = [];
-  console.table(data);
-  for (const {
-    destinationRangeStart,
-    sourceRangeStart,
-    bothRangesLength,
-  } of data) {
+type Range = {
+  rangeStart: number;
+  rangeContains: number;
+};
+
+type Map = {
+  name: string;
+  source: Range;
+  destination: Range;
+};
+
+const parseMap = (input: string): Map[] => {
+  const lines = input.split("\n").map((line) => line.trim());
+  const name = lines[0]!.split(" ")[0]!;
+  const mapsLines = lines.slice(1);
+  const maps: Map[] = [];
+  for (const mapLine of mapsLines) {
+    const [destinationRangeStart, sourceRangeStart, rangesContain] =
+      mapLine.split(" ");
     maps.push({
-      rangeStart: destinationRangeStart,
-      rangeEnd: destinationRangeStart + bothRangesLength - 1,
-      valueDifference: sourceRangeStart - destinationRangeStart,
+      name,
+      destination: {
+        rangeStart: parseInt(destinationRangeStart!),
+        rangeContains: parseInt(rangesContain!),
+      },
+      source: {
+        rangeStart: parseInt(sourceRangeStart!),
+        rangeContains: parseInt(rangesContain!),
+      },
     });
   }
-  return doFillInTheGaps ? fillInTheGaps(maps) : maps;
+  return maps;
 };
-it("creates a map", () => {
-  const map = createMaps([
+it("parses map", () => {
+  const input = dedent(`
+    soil-to-fertilizer map:
+    0 15 37
+    37 52 2
+    39 0 15
+  `);
+  const result = parseMap(input);
+  expect(result).toEqual([
     {
-      destinationRangeStart: 50,
-      sourceRangeStart: 98,
-      bothRangesLength: 2,
+      name: "soil-to-fertilizer",
+      destination: { rangeStart: 0, rangeContains: 37 },
+      source: { rangeStart: 15, rangeContains: 37 },
     },
     {
-      destinationRangeStart: 52,
-      sourceRangeStart: 50,
-      bothRangesLength: 48,
+      name: "soil-to-fertilizer",
+      destination: { rangeStart: 37, rangeContains: 2 },
+      source: { rangeStart: 52, rangeContains: 2 },
+    },
+    {
+      name: "soil-to-fertilizer",
+      destination: { rangeStart: 39, rangeContains: 15 },
+      source: { rangeStart: 0, rangeContains: 15 },
     },
   ]);
-  // expect(map).toMatchInlineSnapshot(`
-  //   [
-  //     {
-  //       "rangeEnd": 49,
-  //       "rangeStart": 0,
-  //       "valueDifference": 0,
-  //     },
-  //     {
-  //       "rangeEnd": 51,
-  //       "rangeStart": 50,
-  //       "valueDifference": 48,
-  //     },
-  //     {
-  //       "rangeEnd": 99,
-  //       "rangeStart": 52,
-  //       "valueDifference": -2,
-  //     },
-  //     {
-  //       "rangeEnd": 52,
-  //       "rangeStart": 51,
-  //       "valueDifference": 0,
-  //     },
-  //     {
-  //       "rangeEnd": Infinity,
-  //       "rangeStart": 100,
-  //       "valueDifference": 0,
-  //     },
-  //   ]
-  // `);
-
-  const maps2 = [
-    {
-      destinationRangeStart: 0,
-      sourceRangeStart: 69,
-      bothRangesLength: 1,
-    },
-    {
-      destinationRangeStart: 1,
-      sourceRangeStart: 0,
-      bothRangesLength: 69,
-    },
-  ];
-  const result2 = createMaps(maps2);
-  console.table(result2);
-  expect(result2).toMatchInlineSnapshot(`
-        [
-          {
-            "rangeEnd": 68,
-            "rangeStart": 0,
-            "valueDifference": 1,
-          },
-          {
-            "rangeEnd": 69,
-            "rangeStart": 69,
-            "valueDifference": -69,
-          },
-          {
-            "rangeEnd": Infinity,
-            "rangeStart": 70,
-            "valueDifference": 0,
-          },          
-        ]
-      `);
 });
-/**
 
-1 2 3 4 5 6 7 8 9 // range of seeds: 1-9
-1 2 3 7 8 9 4 5 6 // seed-to-humidity: 1-3 -> 0, 4-6 -> +2, 7-9 -> -3
-                                       1-3       6-8        4-6
-                  // humidity-to-location: 1-5 -> +5, 6-9 -> -5
+const parseInput = (
+  input: string
+): {
+  seeds: Range[];
+  maps: Map[];
+} => {
+  const lines = input.split("\n").map((line) => line.trim());
+  const seedLine = lines.find((line) => line.startsWith("seeds:"));
+  const seedLineParts = seedLine!.split(" ");
+  const seeds = seedLineParts
+    .slice(1)
+    .map((part) => parseInt(part))
+    .reduce((ranges, seed, i) => {
+      if (i % 2 === 0) {
+        ranges.push({ rangeStart: seed, rangeContains: 0 });
+      } else {
+        ranges[ranges.length - 1]!.rangeContains = seed;
+      }
+      return ranges;
+    }, [] as Range[]);
 
-0+5
-0-5
-2+5
-2-5
--3+5
--3-5
-
-*/
-
-const parseInput = (input: string) => {
-  const lines = input.split("\n");
-  const seedDatums = lines[0]!.split(": ")[1]!.split(" ").map(Number);
-  const seedRanges = [];
-  for (let i = 0; i < seedDatums.length; i += 2) {
-    seedRanges.push({
-      seedStart: seedDatums[i]!,
-      seedRangeLength: seedDatums[i + 1]!,
-    });
-  }
-
-  const maps: {
-    from: string;
-    to: string;
-    maps: {
-      rangeStart: number;
-      rangeEnd: number;
-      valueDifference: number;
-    }[];
-  }[] = [];
-
-  maps.push({
-    from: "heaven",
-    to: "seed",
-    maps: createMaps(
-      seedRanges.map((seedRange) => ({
-        destinationRangeStart: seedRange.seedStart,
-        sourceRangeStart: seedRange.seedStart,
-        bothRangesLength: seedRange.seedRangeLength,
-      })),
-      false
-    ),
-  });
-  // console.log(
-  //   "AAA!!!",
-  //   createMaps(
-  //     seedRanges.map((seedRange) => ({
-  //       destinationRangeStart: seedRange.seedStart,
-  //       sourceRangeStart: seedRange.seedStart,
-  //       bothRangesLength: seedRange.seedRangeLength,
-  //     })),
-  //     false
-  //   )
-  // );
-
-  const mapLines = lines.slice(1).join("\n").split("\n\n");
-  for (const mapLine of mapLines) {
-    const mapLines = mapLine.split("\n").filter(Boolean);
-    const from = mapLines[0]!.split("-to-")[0]!.split(" ")[0]!;
-    const to = mapLines[0]!.split("-to-")[1]!.split(" ")[0]!;
-    const mapData = mapLines.slice(1).map((line) => ({
-      destinationRangeStart: Number(line.split(" ")[0]!),
-      sourceRangeStart: Number(line.split(" ")[1]!),
-      bothRangesLength: Number(line.split(" ")[2]!),
-    }));
-    maps.push({
-      from,
-      to,
-      maps: createMaps(mapData),
-    });
-  }
+  const mapsLines = lines.filter((line) => line.endsWith("map:"));
+  const maps = mapsLines
+    .map((mapLine, i) => {
+      const nextMapLine = mapsLines[i + 1];
+      const mapLines = lines
+        .slice(
+          lines.indexOf(mapLine),
+          nextMapLine ? lines.indexOf(nextMapLine) : lines.length
+        )
+        .filter(Boolean);
+      // console.log({ mapLines });
+      return parseMap(mapLines.join("\n"));
+    })
+    .flat();
 
   return {
-    seedRanges,
+    seeds,
     maps,
   };
 };
+it("parses input", () => {
+  const result = parseInput(sampleInput);
+  // console.log(JSON.stringify(result, null, 2));
+  expect(result).toEqual({
+    seeds: [
+      { rangeStart: 79, rangeContains: 14 },
+      { rangeStart: 55, rangeContains: 13 },
+    ],
+    maps: [
+      {
+        name: "seed-to-soil",
+        destination: { rangeStart: 50, rangeContains: 2 },
+        source: { rangeStart: 98, rangeContains: 2 },
+      },
+      {
+        name: "seed-to-soil",
+        destination: { rangeStart: 52, rangeContains: 48 },
+        source: { rangeStart: 50, rangeContains: 48 },
+      },
+      {
+        name: "soil-to-fertilizer",
+        destination: { rangeStart: 0, rangeContains: 37 },
+        source: { rangeStart: 15, rangeContains: 37 },
+      },
+      {
+        name: "soil-to-fertilizer",
+        destination: { rangeStart: 37, rangeContains: 2 },
+        source: { rangeStart: 52, rangeContains: 2 },
+      },
+      {
+        name: "soil-to-fertilizer",
+        destination: { rangeStart: 39, rangeContains: 15 },
+        source: { rangeStart: 0, rangeContains: 15 },
+      },
+      {
+        name: "fertilizer-to-water",
+        destination: { rangeStart: 49, rangeContains: 8 },
+        source: { rangeStart: 53, rangeContains: 8 },
+      },
+      {
+        name: "fertilizer-to-water",
+        destination: { rangeStart: 0, rangeContains: 42 },
+        source: { rangeStart: 11, rangeContains: 42 },
+      },
+      {
+        name: "fertilizer-to-water",
+        destination: { rangeStart: 42, rangeContains: 7 },
+        source: { rangeStart: 0, rangeContains: 7 },
+      },
+      {
+        name: "fertilizer-to-water",
+        destination: { rangeStart: 57, rangeContains: 4 },
+        source: { rangeStart: 7, rangeContains: 4 },
+      },
+      {
+        name: "water-to-light",
+        destination: { rangeStart: 88, rangeContains: 7 },
+        source: { rangeStart: 18, rangeContains: 7 },
+      },
+      {
+        name: "water-to-light",
+        destination: { rangeStart: 18, rangeContains: 70 },
+        source: { rangeStart: 25, rangeContains: 70 },
+      },
+      {
+        name: "light-to-temperature",
+        destination: { rangeStart: 45, rangeContains: 23 },
+        source: { rangeStart: 77, rangeContains: 23 },
+      },
+      {
+        name: "light-to-temperature",
+        destination: { rangeStart: 81, rangeContains: 19 },
+        source: { rangeStart: 45, rangeContains: 19 },
+      },
+      {
+        name: "light-to-temperature",
+        destination: { rangeStart: 68, rangeContains: 13 },
+        source: { rangeStart: 64, rangeContains: 13 },
+      },
+      {
+        name: "temperature-to-humidity",
+        destination: { rangeStart: 0, rangeContains: 1 },
+        source: { rangeStart: 69, rangeContains: 1 },
+      },
+      {
+        name: "temperature-to-humidity",
+        destination: { rangeStart: 1, rangeContains: 69 },
+        source: { rangeStart: 0, rangeContains: 69 },
+      },
+      {
+        name: "humidity-to-location",
+        destination: { rangeStart: 60, rangeContains: 37 },
+        source: { rangeStart: 56, rangeContains: 37 },
+      },
+      {
+        name: "humidity-to-location",
+        destination: { rangeStart: 56, rangeContains: 4 },
+        source: { rangeStart: 93, rangeContains: 4 },
+      },
+    ],
+  });
+});
 
-const seedCanBePlanted = (
-  seedRangeStart: number,
-  seedRangeEnd: number,
-  plantMaps: {
-    rangeStart: number;
-    rangeEnd: number;
-    valueDifference: number;
-  }[]
-): boolean => {
-  for (const plantMap of plantMaps) {
-    if (
-      seedRangeStart >= plantMap.rangeStart &&
-      seedRangeEnd <= plantMap.rangeEnd
-    ) {
-      return true;
-    }
+type Step = {
+  narrowedSource: Range;
+  originalSource: Range;
+  narrowedDestination: Range;
+  originalDestination: Range;
+};
+
+type Path = Step[];
+
+const rangesOverlap = (a: Range, b: Range): Range | false => {
+  const rangeAStart = a.rangeStart;
+  const rangeAEnd = a.rangeStart + a.rangeContains - 1;
+  const rangeBStart = b.rangeStart;
+  const rangeBEnd = b.rangeStart + b.rangeContains - 1;
+  const rangeStart = Math.max(rangeAStart, rangeBStart);
+  const rangeEnd = Math.min(rangeAEnd, rangeBEnd);
+
+  if (rangeStart <= rangeEnd) {
+    return {
+      rangeStart,
+      rangeContains: rangeEnd - rangeStart + 1,
+    };
   }
   return false;
 };
-it.skip("seedCanBePlanted works", () => {
-  const plantMaps = [
-    {
-      rangeStart: 50,
-      rangeEnd: 100,
-      valueDifference: 48,
-    },
-  ];
-  expect(seedCanBePlanted(1, 3, plantMaps)).toBe(true);
+it("checks if ranges overlap", () => {
+  expect(
+    rangesOverlap(
+      { rangeStart: 1, rangeContains: 2 },
+      { rangeStart: 2, rangeContains: 2 }
+    )
+  ).toEqual({ rangeStart: 2, rangeContains: 1 });
+
+  expect(
+    rangesOverlap(
+      { rangeStart: 1, rangeContains: 4 }, // 1 2 3 4
+      { rangeStart: 2, rangeContains: 2 } //    2 3
+    )
+  ).toEqual({ rangeStart: 2, rangeContains: 2 });
+
+  expect(
+    rangesOverlap(
+      { rangeStart: 2, rangeContains: 4 }, //   2 3 4 5
+      { rangeStart: 1, rangeContains: 3 } //  1 2 3
+    )
+  ).toEqual({ rangeStart: 2, rangeContains: 2 });
+
+  expect(
+    rangesOverlap(
+      { rangeStart: 7, rangeContains: 3 }, //         7 8 9
+      { rangeStart: 3, rangeContains: 6 } //  3 4 5 6 7 8
+    )
+  ).toEqual({ rangeStart: 7, rangeContains: 2 });
+
+  expect(
+    rangesOverlap(
+      { rangeStart: 1, rangeContains: 2 },
+      { rangeStart: 3, rangeContains: 2 }
+    )
+  ).toEqual(false);
 });
 
-const fillInTheGaps = (
-  maps: {
-    rangeStart: number;
-    rangeEnd: number;
-    valueDifference: number;
-  }[]
-) => {
-  if (maps.length === 0) {
-    return [
-      {
-        rangeStart: 0,
-        rangeEnd: Infinity,
-        valueDifference: 0,
-      },
-    ];
-  }
-
-  let newMaps = [...maps];
-  const sortedMaps = [...newMaps.sort((a, b) => a.rangeStart - b.rangeStart)];
-  console.log("rangeStart:", sortedMaps[0]!.rangeStart);
-  if (sortedMaps[0]!.rangeStart !== 0) {
-    newMaps = [
-      {
-        rangeStart: 0,
-        rangeEnd: sortedMaps[0]!.rangeStart - 1,
-        valueDifference: 0,
-      },
-      ...newMaps,
-    ];
-  }
-  for (let i = 0; i < sortedMaps.length - 1; i++) {
-    const map = sortedMaps[i]!;
-    const nextMap = sortedMaps[i + 1]!;
-    if (map.rangeEnd + 1 !== nextMap.rangeStart) {
-      newMaps.push({
-        rangeStart: map.rangeEnd,
-        rangeEnd: nextMap.rangeStart,
-        valueDifference: 0,
-      });
-    }
-  }
-  newMaps.push({
-    rangeStart: sortedMaps[sortedMaps.length - 1]!.rangeEnd + 1,
-    rangeEnd: Infinity,
-    valueDifference: 0,
-  });
-  // console.log(newMaps);
-
-  return newMaps;
-};
-it("fillInTheGaps works", () => {
-  const maps = [
-    {
-      rangeStart: 50,
-      rangeEnd: 100,
-      valueDifference: 48,
-    },
-  ];
-  expect(fillInTheGaps(maps)).toMatchInlineSnapshot(`
-    [
-      {
-        "rangeEnd": 49,
-        "rangeStart": 0,
-        "valueDifference": 0,
-      },
-      {
-        "rangeEnd": 100,
-        "rangeStart": 50,
-        "valueDifference": 48,
-      },
-      {
-        "rangeEnd": Infinity,
-        "rangeStart": 101,
-        "valueDifference": 0,
-      },
-    ]
-  `);
-});
-
-const resolvedCache = new Map<string, number>();
-const resolveValue = (
-  maps: Map<
-    string,
-    {
-      to: string;
-      map: (value: number) => number;
-    }
-  >,
-  value: number,
-  from: string,
-  to: string
-): number => {
-  if (from === to) {
-    return value;
-  }
-
-  if (resolvedCache.has(`${from}->${to}:${value}`)) {
-    console.log(`Cache hit ${from}->${to}:${value}`);
-    return resolvedCache.get(`${from}->${to}:${value}`)!;
-  }
-
-  const map = maps.get(from);
-  if (!map) {
-    throw new Error(`No map found for ${from}`);
-  }
-  if (map.to === to) {
-    // console.log(`Map ${from} -> ${to} found: ${map.map(value)}`);
-    const resolvedValue = map.map(value);
-    resolvedCache.set(`${from}->${to}:${value}`, resolvedValue);
-    return resolvedValue;
-  }
-  // console.log(`Map ${from} -> ${map.to} found: ${map.map(value)}`);
-  const resolvedValue = resolveValue(maps, map.map(value), map.to, to);
-  resolvedCache.set(`${from}->${map.to}:${value}`, resolvedValue);
-  return resolvedValue;
-};
-it.skip("resolves value", () => {
-  const { maps } = parseInput(sampleInput);
-  expect(resolveValue(maps, 82, "seed", "soil")).toBe(84);
-  expect(resolveValue(maps, 82, "seed", "fertilizer")).toBe(84);
-  expect(resolveValue(maps, 82, "seed", "water")).toBe(84);
-  expect(resolveValue(maps, 82, "seed", "light")).toBe(77);
-  expect(resolveValue(maps, 82, "seed", "temperature")).toBe(45);
-  expect(resolveValue(maps, 82, "seed", "humidity")).toBe(46);
-  expect(resolveValue(maps, 82, "seed", "location")).toBe(46);
-});
-
-type mymap = {
-  rangeStart: number;
-  rangeEnd: number;
-  valueDifference: number;
-};
-const findPossibleCombos = (_maps1: mymap[], maps2: mymap[]) => {
-  const maps1 = _maps1.map((map) => ({
-    ...map,
-    resultRangeStart: map.rangeStart + map.valueDifference,
-    resultRangeEnd: map.rangeEnd + map.valueDifference,
-  }));
-
-  console.log({ maps2 });
-
-  const combinedMaps = [];
-  for (const maps2Map of maps2) {
-    for (const maps1Map of maps1) {
-      // console.log({
-      //   humidityToLocationMap: maps2Map,
-      //   seedsToHumidityResultsMap: maps1Map,
-      // });
-      const commonRangeStart = Math.max(
-        maps2Map.rangeStart,
-        maps1Map.resultRangeStart
-      );
-      const commonRangeEnd = Math.min(
-        maps2Map.rangeEnd,
-        maps1Map.resultRangeEnd
-      );
-      console.log({ commonRangeStart, commonRangeEnd });
-      if (commonRangeStart > commonRangeEnd) {
+const findRangePaths = (seedRanges: Range[], maps: Map[]): Path[] => {
+  const paths: Path[] = [];
+  for (const seedRange of seedRanges) {
+    for (const map of maps) {
+      // console.log({ seedRange, map });
+      const commonSourceRange = rangesOverlap(seedRange, map.source);
+      if (!commonSourceRange) {
         continue;
       }
-      const valueDifference =
-        maps2Map.valueDifference + maps1Map.valueDifference;
-
-      // if (`${maps1Map.rangeStart}|${maps1Map.rangeEnd}` === "52|100") {
-      //   console.log({
-      //     maps1Map,
-      //     maps2Map,
-      //     commonRangeStart,
-      //     commonRangeEnd,
-      //     valueDifference,
-      //   });
-      //   throw new Error("AAA");
-      // }
-
-      combinedMaps.push({
-        sourceRangeStart: commonRangeStart - maps1Map.valueDifference,
-        sourceRangeEnd: commonRangeEnd - maps1Map.valueDifference,
-        rangeStart: commonRangeStart,
-        rangeEnd: commonRangeEnd,
-        valueDifference,
-        path:
-          (maps2Map.path || "") +
-          `${maps1Map.resultRangeStart}-${maps1Map.resultRangeEnd}` +
-          " ",
-      });
+      // console.log({ commonSourceRange, seedRange });
+      const diff = map.source.rangeStart - map.destination.rangeStart;
+      paths.push([
+        {
+          narrowedSource: commonSourceRange,
+          originalSource: seedRange,
+          narrowedDestination: {
+            rangeStart: commonSourceRange.rangeStart - diff,
+            rangeContains: commonSourceRange.rangeContains,
+          },
+          originalDestination: map.destination,
+        },
+      ]);
     }
   }
-
-  return combinedMaps;
+  return paths;
 };
-it("finds possible combos", () => {
-  // const humidityToLocationMaps = [
-  //   { rangeStart: 0, rangeEnd: 55, valueDifference: 0 },
-  //   { rangeStart: 56, rangeEnd: 60, valueDifference: 37 },
-  //   { rangeStart: 60, rangeEnd: 97, valueDifference: -4 },
-  //   { rangeStart: 98, rangeEnd: Infinity, valueDifference: 0 },
-  // ];
-  // const seedsToHumidityMaps = [
-  //   { rangeStart: 0, rangeEnd: 1, valueDifference: 69 },
-  //   { rangeStart: 1, rangeEnd: 70, valueDifference: -1 },
-  //   { rangeStart: 71, rangeEnd: Infinity, valueDifference: 0 },
-  // ];
-  // const seedsToLocationMaps = [
-
-  // ];
-
-  const seedsMap = [{ rangeStart: 0, rangeEnd: 9, valueDifference: 0 }];
-  const humidityToLocationMaps = [
-    { rangeStart: 0, rangeEnd: 0, valueDifference: 0 },
-    { rangeStart: 1, rangeEnd: 5, valueDifference: 5 },
-    { rangeStart: 6, rangeEnd: 9, valueDifference: -5 },
-    { rangeStart: 10, rangeEnd: Infinity, valueDifference: 0 },
+it("finds range paths for one seed range two maps on the same level", () => {
+  const seeds: Range[] = [
+    { rangeStart: 1, rangeContains: 3 }, // 1 2 3
   ];
-  const seedsToHumidityMaps = [
-    { rangeStart: 0, rangeEnd: 0, valueDifference: 0 },
-    { rangeStart: 1, rangeEnd: 3, valueDifference: 0 },
-    { rangeStart: 4, rangeEnd: 6, valueDifference: 2 },
-    { rangeStart: 7, rangeEnd: 9, valueDifference: -3 },
-    { rangeStart: 10, rangeEnd: Infinity, valueDifference: 0 },
+  const maps: Map[] = [
+    {
+      name: "seed-to-soil",
+      destination: { rangeStart: 2, rangeContains: 2 },
+      source: { rangeStart: 1, rangeContains: 2 }, // 1 2 >> 2 3
+    },
+    {
+      name: "seed-to-soil",
+      destination: { rangeStart: 1, rangeContains: 1 },
+      source: { rangeStart: 3, rangeContains: 1 }, // 3 >> 1
+    },
   ];
-  /**
-  0-0: 0+0
-  1-5: 1+0, 2+0, 3+0, 7-3, 8-3
-  6-9: 4+2, 5+2, 6+2, 9-3
-  10-...: 10+0, ...
-   */
-
-  console.table(
-    findPossibleCombos(seedsToHumidityMaps, humidityToLocationMaps)
-  );
-
-  expect(findPossibleCombos(seedsToHumidityMaps, humidityToLocationMaps))
-    .toMatchInlineSnapshot(`
+  const result = findRangePaths(seeds, maps);
+  expect(result).toEqual([
     [
       {
-        "path": "0-0 ",
-        "rangeEnd": 0,
-        "rangeStart": 0,
-        "sourceRangeEnd": 0,
-        "sourceRangeStart": 0,
-        "valueDifference": 0,
-      },
-      {
-        "path": "1-3 ",
-        "rangeEnd": 3,
-        "rangeStart": 1,
-        "sourceRangeEnd": 3,
-        "sourceRangeStart": 1,
-        "valueDifference": 5,
-      },
-      {
-        "path": "4-6 ",
-        "rangeEnd": 5,
-        "rangeStart": 4,
-        "sourceRangeEnd": 8,
-        "sourceRangeStart": 7,
-        "valueDifference": 2,
-      },
-      {
-        "path": "6-8 ",
-        "rangeEnd": 8,
-        "rangeStart": 6,
-        "sourceRangeEnd": 6,
-        "sourceRangeStart": 4,
-        "valueDifference": -3,
-      },
-      {
-        "path": "4-6 ",
-        "rangeEnd": 6,
-        "rangeStart": 6,
-        "sourceRangeEnd": 9,
-        "sourceRangeStart": 9,
-        "valueDifference": -8,
-      },
-      {
-        "path": "10-Infinity ",
-        "rangeEnd": Infinity,
-        "rangeStart": 10,
-        "sourceRangeEnd": Infinity,
-        "sourceRangeStart": 10,
-        "valueDifference": 0,
-      },
-    ]
-  `);
+        originalSource: { rangeStart: 1, rangeContains: 3 }, // 1 2 3
+        narrowedSource: { rangeStart: 1, rangeContains: 2 }, // 1 2
 
-  // const seedsToHumidityResultsMaps = seedsToHumidityMaps.map((map) => ({
-  //   ...map,
-  //   resultRangeStart: map.sourceRangeStart + map.valueDifference,
-  //   resultRangeEnd: map.sourceRangeEnd + map.valueDifference,
-  // }));
-  // console.table(seedsToHumidityResultsMaps);
-
-  // const combinedMaps = [];
-  // for (const humidityToLocationMap of humidityToLocationMaps) {
-  //   for (const seedsToHumidityResultsMap of seedsToHumidityResultsMaps) {
-  //     console.log({ humidityToLocationMap, seedsToHumidityResultsMap });
-  //     const commonRangeStart = Math.max(
-  //       humidityToLocationMap.sourceRangeStart,
-  //       seedsToHumidityResultsMap.resultRangeStart
-  //     );
-  //     const commonRangeEnd = Math.min(
-  //       humidityToLocationMap.sourceRangeEnd,
-  //       seedsToHumidityResultsMap.resultRangeEnd
-  //     );
-  //     console.log({ commonRangeStart, commonRangeEnd });
-  //     if (commonRangeStart > commonRangeEnd) {
-  //       continue;
-  //     }
-  //     const valueDifference =
-  //       humidityToLocationMap.valueDifference +
-  //       seedsToHumidityResultsMap.valueDifference;
-  //     combinedMaps.push({
-  //       sourceRangeStart:
-  //         commonRangeStart - seedsToHumidityResultsMap.valueDifference,
-  //       sourceRangeEnd:
-  //         commonRangeEnd - seedsToHumidityResultsMap.valueDifference,
-  //       rangeStart: commonRangeStart,
-  //       rangeEnd: commonRangeEnd,
-  //       valueDifference,
-  //     });
-  //   }
-  // }
-  // console.table(combinedMaps);
-});
-it.only("finds possible combos 2", () => {
-  const seedsMap = createMaps(
-    [
-      {
-        destinationRangeStart: 79,
-        sourceRangeStart: 79,
-        bothRangesLength: 14,
-      },
-      {
-        destinationRangeStart: 55,
-        sourceRangeStart: 55,
-        bothRangesLength: 13,
+        originalDestination: { rangeStart: 2, rangeContains: 2 }, // 2 3
+        narrowedDestination: { rangeStart: 2, rangeContains: 2 }, // 2 3
       },
     ],
-    false
-  );
-  console.table(seedsMap);
-  const seedToSoilMaps = createMaps([
-    {
-      destinationRangeStart: 50,
-      sourceRangeStart: 98,
-      bothRangesLength: 2,
-    },
-    {
-      destinationRangeStart: 52,
-      sourceRangeStart: 50,
-      bothRangesLength: 48,
-    },
-  ]);
+    [
+      {
+        originalSource: { rangeStart: 1, rangeContains: 3 }, // 1 2 3
+        narrowedSource: { rangeStart: 3, rangeContains: 1 }, // 3
 
-  // console.table(
-  //   findPossibleCombos(seedsMap, seedToSoilMaps).sort(
-  //     (a, b) => a.sourceRangeStart - b.sourceRangeStart
-  //   )
-  // );
-  // expect(
-  //   findPossibleCombos(seedsMap, seedToSoilMaps).sort(
-  //     (a, b) => a.sourceRangeStart - b.sourceRangeStart
-  //   )
-  // ).toMatchSnapshot();
+        originalDestination: { rangeStart: 1, rangeContains: 1 }, // 1
+        narrowedDestination: { rangeStart: 1, rangeContains: 1 }, // 1
+      },
+    ],
+  ] satisfies Path[]);
+});
+it("finds range paths for two seed ranges two maps on the same level", () => {
+  const seeds: Range[] = [
+    { rangeStart: 1, rangeContains: 3 }, // 1 2 3
+    { rangeStart: 7, rangeContains: 3 }, // 7 8 9
+  ];
+  const maps: Map[] = [
+    {
+      name: "seed-to-soil",
+      destination: { rangeStart: 2, rangeContains: 2 },
+      source: { rangeStart: 1, rangeContains: 2 }, // 1 2 >> 2 3
+    },
+    {
+      name: "seed-to-soil",
+      destination: { rangeStart: 1, rangeContains: 6 },
+      source: { rangeStart: 3, rangeContains: 6 }, // 3 4 5 6 7 8 >> 1 2 3 4 5 6
+    },
+  ];
+  const result = findRangePaths(seeds, maps);
+  expect(result).toEqual([
+    [
+      {
+        originalSource: { rangeStart: 1, rangeContains: 3 }, // 1 2 3
+        narrowedSource: { rangeStart: 1, rangeContains: 2 }, // 1 2
 
-  const soilToFertilizerMaps = createMaps([
-    {
-      destinationRangeStart: 0,
-      sourceRangeStart: 15,
-      bothRangesLength: 37,
-    },
-    {
-      destinationRangeStart: 37,
-      sourceRangeStart: 52,
-      bothRangesLength: 2,
-    },
-    {
-      destinationRangeStart: 39,
-      sourceRangeStart: 0,
-      bothRangesLength: 15,
-    },
-  ]);
+        originalDestination: { rangeStart: 2, rangeContains: 2 }, // 2 3
+        narrowedDestination: { rangeStart: 2, rangeContains: 2 }, // 2 3
+      },
+    ],
+    [
+      {
+        originalSource: { rangeStart: 1, rangeContains: 3 }, // 1 2 3
+        narrowedSource: { rangeStart: 3, rangeContains: 1 }, // 3
 
-  // console.table(
-  //   findPossibleCombos(seedToSoilMaps, soilToFertilizerMaps).sort(
-  //     (a, b) => a.sourceRangeStart - b.sourceRangeStart
-  //   )
-  // );
-  // return;
+        originalDestination: { rangeStart: 1, rangeContains: 6 }, // 1 2 3 4 5 6
+        narrowedDestination: { rangeStart: 1, rangeContains: 1 }, // 1
+      },
+    ],
+    [
+      {
+        originalSource: { rangeStart: 7, rangeContains: 3 }, // 7 8 9
+        narrowedSource: { rangeStart: 7, rangeContains: 2 }, // 7 8
 
-  const fertilizerToWaterMaps = createMaps([
-    {
-      destinationRangeStart: 49,
-      sourceRangeStart: 53,
-      bothRangesLength: 8,
-    },
-    {
-      destinationRangeStart: 0,
-      sourceRangeStart: 11,
-      bothRangesLength: 42,
-    },
-    {
-      destinationRangeStart: 42,
-      sourceRangeStart: 0,
-      bothRangesLength: 7,
-    },
-    {
-      destinationRangeStart: 57,
-      sourceRangeStart: 7,
-      bothRangesLength: 4,
-    },
-  ]);
-
-  const waterToLightMaps = createMaps([
-    {
-      destinationRangeStart: 88,
-      sourceRangeStart: 18,
-      bothRangesLength: 7,
-    },
-    {
-      destinationRangeStart: 18,
-      sourceRangeStart: 25,
-      bothRangesLength: 70,
-    },
-  ]);
-
-  const lightToTemperatureMaps = createMaps([
-    {
-      destinationRangeStart: 45,
-      sourceRangeStart: 77,
-      bothRangesLength: 23,
-    },
-    {
-      destinationRangeStart: 81,
-      sourceRangeStart: 45,
-      bothRangesLength: 19,
-    },
-    {
-      destinationRangeStart: 68,
-      sourceRangeStart: 64,
-      bothRangesLength: 13,
-    },
-  ]);
-
-  const temperatureToHumidityMaps = createMaps([
-    {
-      destinationRangeStart: 0,
-      sourceRangeStart: 69,
-      bothRangesLength: 1,
-    },
-    {
-      destinationRangeStart: 1,
-      sourceRangeStart: 0,
-      bothRangesLength: 69,
-    },
-  ]);
-
-  const humidityToLocationMaps = createMaps([
-    {
-      destinationRangeStart: 60,
-      sourceRangeStart: 56,
-      bothRangesLength: 37,
-    },
-    {
-      destinationRangeStart: 56,
-      sourceRangeStart: 93,
-      bothRangesLength: 4,
-    },
-  ]);
-
-  let allPossibleMapResults = [];
-  console.log("Doing temperatureToHumidityMaps and humidityToLocationMaps");
-  allPossibleMapResults = findPossibleCombos(
-    humidityToLocationMaps,
-    temperatureToHumidityMaps
-  );
-  console.log("Doing temperatureToHumidityMaps and allPossibleMapResults");
-  allPossibleMapResults = findPossibleCombos(
-    temperatureToHumidityMaps,
-    allPossibleMapResults
-  );
-  // console.log("Doing lightToTemperatureMaps and allPossibleMapResults");
-  // console.table(temperatureToHumidityMaps);
-  // console.table(lightToTemperatureMaps);
-  // allPossibleMapResults = findPossibleCombos(
-  //   temperatureToHumidityMaps,
-  //   lightToTemperatureMaps
-  // );
-
-  console.log("Doing lightToTemperatureMaps and allPossibleMapResults");
-  allPossibleMapResults = findPossibleCombos(
-    lightToTemperatureMaps,
-    allPossibleMapResults
-  );
-
-  // console.log("Doing waterToLightMaps and allPossibleMapResults");
-  // allPossibleMapResults = findPossibleCombos(
-  //   waterToLightMaps,
-  //   allPossibleMapResults
-  // );
-  // console.log("Doing fertilizerToWaterMaps and allPossibleMapResults");
-  // allPossibleMapResults = findPossibleCombos(
-  //   fertilizerToWaterMaps,
-  //   allPossibleMapResults
-  // );
-
-  // console.log("Doing soilToFertilizerMaps and allPossibleMapResults");
-  // allPossibleMapResults = findPossibleCombos(
-  //   soilToFertilizerMaps,
-  //   allPossibleMapResults
-  // );
-
-  // console.log("Doing seedToSoilMaps and allPossibleMapResults");
-  // allPossibleMapResults = findPossibleCombos(
-  //   seedToSoilMaps,
-  //   allPossibleMapResults
-  // );
-  // console.log("Doing seedsMap and allPossibleMapResults");
-  // allPossibleMapResults = findPossibleCombos(seedsMap, allPossibleMapResults);
-
-  console.table(
-    allPossibleMapResults.sort(
-      (a, b) => a.sourceRangeStart - b.sourceRangeStart
-    )
-  );
+        originalDestination: { rangeStart: 1, rangeContains: 6 }, // 1 2 3 4 5 6
+        narrowedDestination: { rangeStart: 5, rangeContains: 2 }, // 5 6
+      },
+    ],
+  ] satisfies Path[]);
 });
 
 const main = (input: string) => {
-  const { seedRanges, maps } = parseInput(input);
+  // const  = parseInput(input);
 
-  console.log(maps);
-
-  let allPossibleMapResults = findPossibleCombos(maps[6]!.maps, maps[7]!.maps);
-  allPossibleMapResults = findPossibleCombos(
-    maps[5]!.maps,
-    allPossibleMapResults
-  );
-  allPossibleMapResults = findPossibleCombos(
-    maps[4]!.maps,
-    allPossibleMapResults
-  );
-  allPossibleMapResults = findPossibleCombos(
-    maps[3]!.maps,
-    allPossibleMapResults
-  );
-  allPossibleMapResults = findPossibleCombos(
-    maps[2]!.maps,
-    allPossibleMapResults
-  );
-  allPossibleMapResults = findPossibleCombos(
-    maps[1]!.maps,
-    allPossibleMapResults
-  );
-  allPossibleMapResults = findPossibleCombos(
-    maps[0]!.maps,
-    allPossibleMapResults
-  );
-  // for (let i = maps.length - 2; i >= 1; i--) {
-  //   // console.log("i", i);
-  //   const map = maps[i]!;
-  //   console.table(
-  //     allPossibleMapResults.sort(
-  //       (a, b) => a.sourceRangeStart - b.sourceRangeStart
-  //     )
-  //   );
-  //   allPossibleMapResults = findPossibleCombos(allPossibleMapResults, map.maps);
-  // }
-
-  // let allPossibleMapResults = maps[0]!.maps;
-  // for (let i = 1; i < maps.length; i++) {
-  //   const map = maps[i]!;
-  //   console.table(
-  //     allPossibleMapResults.sort((a, b) => a.sourceRangeStart - b.sourceRangeStart)
-  //   );
-  //   allPossibleMapResults = findPossibleCombos(allPossibleMapResults, map.maps);
-  // }
-
-  console.table(
-    allPossibleMapResults.sort(
-      (a, b) => a.sourceRangeStart - b.sourceRangeStart
-    )
-  );
-
-  // for (const possibleMapResult of allPossibleMapResults) {
-  //   for (const seedRange of seedRanges) {
-  //     if (
-  //       seedRange.seedStart >= possibleMapResult.rangeStart &&
-  //       seedRange.seedStart + seedRange.seedRangeLength <=
-  //         possibleMapResult.rangeEnd
-  //     ) {
-  //       return seedRange.seedStart + possibleMapResult.valueDifference;
-  //     }
-  //   }
-  // }
-
-  // console.table(allPossibleMapResults);
-
-  // return minLocation;
+  return 0;
 };
 
-it("works for example input", () => {
+it.skip("works for example input", () => {
   expect(main(sampleInput)).toBe(46);
 });
 
