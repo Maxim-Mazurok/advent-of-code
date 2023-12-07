@@ -661,5 +661,5 @@ it.skip("works for example input", () => {
 
 it("works for real input", async () => {
   const input = await readFile(join(__dirname, "5.input.txt"), "utf-8");
-  // expect(main(input)).toBe(910845529);
+  expect(main(input)).toBe(77435348);
 });
