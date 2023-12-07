@@ -600,6 +600,54 @@ it("finds range paths for two seed ranges two maps on the same level", () => {
     ],
   ] satisfies Path[]);
 });
+it("finds range paths for a seed range and two maps on different levels", () => {
+  // TODO: need to implement code to pass this test, probably by adding recursion around findRangePaths()
+
+  const seeds: Range[] = [
+    { rangeStart: 1, rangeContains: 3 }, // 1 2 3
+  ];
+  const maps: Map[] = [
+    {
+      from: "seed",
+      to: "soil",
+      mapEntries: [
+        {
+          destination: { rangeStart: 5, rangeContains: 2 },
+          source: { rangeStart: 1, rangeContains: 2 }, // 1 2 >> 5 6
+        },
+      ],
+    },
+    {
+      from: "soil",
+      to: "fertilizer",
+      mapEntries: [
+        {
+          destination: { rangeStart: 2, rangeContains: 2 },
+          source: { rangeStart: 4, rangeContains: 2 }, // 4 5 >> 2 3
+        },
+      ],
+    },
+  ];
+  const result = findRangePaths(seeds, maps);
+  expect(result).toEqual([
+    [
+      {
+        originalSource: { rangeStart: 1, rangeContains: 3 }, // 1 2 3
+        narrowedSource: { rangeStart: 1, rangeContains: 2 }, // 1 2
+
+        originalDestination: { rangeStart: 5, rangeContains: 2 }, // 5 6
+        narrowedDestination: { rangeStart: 5, rangeContains: 2 }, // 5 6
+      },
+      {
+        originalSource: { rangeStart: 4, rangeContains: 2 }, // 4 5
+        narrowedSource: { rangeStart: 5, rangeContains: 1 }, // 5
+
+        originalDestination: { rangeStart: 2, rangeContains: 2 }, // 2 3
+        narrowedDestination: { rangeStart: 3, rangeContains: 1 }, // 3
+      },
+    ],
+  ] satisfies Path[]);
+});
 
 const main = (input: string) => {
   // const  = parseInput(input);
