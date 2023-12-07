@@ -39,27 +39,54 @@ const sampleInput = dedent(`
   56 93 4
 `);
 
+const categoryOrder = {
+  seed: 0,
+  soil: 1,
+  fertilizer: 2,
+  water: 3,
+  light: 4,
+  temperature: 5,
+  humidity: 6,
+  location: 7,
+};
+
+type CategoryName =
+  | "seed"
+  | "soil"
+  | "fertilizer"
+  | "water"
+  | "light"
+  | "temperature"
+  | "humidity"
+  | "location";
+
 type Range = {
   rangeStart: number;
   rangeContains: number;
 };
 
 type Map = {
-  name: string;
+  from: CategoryName;
+  to: CategoryName;
+  mapEntries: MapEntry[];
+};
+
+type MapEntry = {
   source: Range;
   destination: Range;
 };
 
-const parseMap = (input: string): Map[] => {
+const parseMap = (input: string): Map => {
   const lines = input.split("\n").map((line) => line.trim());
   const name = lines[0]!.split(" ")[0]!;
+  const from = name.split("-to-")[0]! as CategoryName;
+  const to = name.split("-to-")[1]! as CategoryName;
   const mapsLines = lines.slice(1);
-  const maps: Map[] = [];
+  const mapEntries: MapEntry[] = [];
   for (const mapLine of mapsLines) {
     const [destinationRangeStart, sourceRangeStart, rangesContain] =
       mapLine.split(" ");
-    maps.push({
-      name,
+    mapEntries.push({
       destination: {
         rangeStart: parseInt(destinationRangeStart!),
         rangeContains: parseInt(rangesContain!),
@@ -70,7 +97,11 @@ const parseMap = (input: string): Map[] => {
       },
     });
   }
-  return maps;
+  return {
+    from,
+    to,
+    mapEntries: mapEntries,
+  };
 };
 it("parses map", () => {
   const input = dedent(`
@@ -80,30 +111,31 @@ it("parses map", () => {
     39 0 15
   `);
   const result = parseMap(input);
-  expect(result).toEqual([
-    {
-      name: "soil-to-fertilizer",
-      destination: { rangeStart: 0, rangeContains: 37 },
-      source: { rangeStart: 15, rangeContains: 37 },
-    },
-    {
-      name: "soil-to-fertilizer",
-      destination: { rangeStart: 37, rangeContains: 2 },
-      source: { rangeStart: 52, rangeContains: 2 },
-    },
-    {
-      name: "soil-to-fertilizer",
-      destination: { rangeStart: 39, rangeContains: 15 },
-      source: { rangeStart: 0, rangeContains: 15 },
-    },
-  ]);
+  expect(result).toEqual({
+    from: "soil",
+    to: "fertilizer",
+    mapEntries: [
+      {
+        destination: { rangeStart: 0, rangeContains: 37 },
+        source: { rangeStart: 15, rangeContains: 37 },
+      },
+      {
+        destination: { rangeStart: 37, rangeContains: 2 },
+        source: { rangeStart: 52, rangeContains: 2 },
+      },
+      {
+        destination: { rangeStart: 39, rangeContains: 15 },
+        source: { rangeStart: 0, rangeContains: 15 },
+      },
+    ],
+  });
 });
 
 const parseInput = (
   input: string
 ): {
   seeds: Range[];
-  maps: Map[];
+  maps: MapEntry[];
 } => {
   const lines = input.split("\n").map((line) => line.trim());
   const seedLine = lines.find((line) => line.startsWith("seeds:"));
@@ -143,104 +175,244 @@ const parseInput = (
 it("parses input", () => {
   const result = parseInput(sampleInput);
   // console.log(JSON.stringify(result, null, 2));
-  expect(result).toEqual({
-    seeds: [
-      { rangeStart: 79, rangeContains: 14 },
-      { rangeStart: 55, rangeContains: 13 },
-    ],
-    maps: [
-      {
-        name: "seed-to-soil",
-        destination: { rangeStart: 50, rangeContains: 2 },
-        source: { rangeStart: 98, rangeContains: 2 },
-      },
-      {
-        name: "seed-to-soil",
-        destination: { rangeStart: 52, rangeContains: 48 },
-        source: { rangeStart: 50, rangeContains: 48 },
-      },
-      {
-        name: "soil-to-fertilizer",
-        destination: { rangeStart: 0, rangeContains: 37 },
-        source: { rangeStart: 15, rangeContains: 37 },
-      },
-      {
-        name: "soil-to-fertilizer",
-        destination: { rangeStart: 37, rangeContains: 2 },
-        source: { rangeStart: 52, rangeContains: 2 },
-      },
-      {
-        name: "soil-to-fertilizer",
-        destination: { rangeStart: 39, rangeContains: 15 },
-        source: { rangeStart: 0, rangeContains: 15 },
-      },
-      {
-        name: "fertilizer-to-water",
-        destination: { rangeStart: 49, rangeContains: 8 },
-        source: { rangeStart: 53, rangeContains: 8 },
-      },
-      {
-        name: "fertilizer-to-water",
-        destination: { rangeStart: 0, rangeContains: 42 },
-        source: { rangeStart: 11, rangeContains: 42 },
-      },
-      {
-        name: "fertilizer-to-water",
-        destination: { rangeStart: 42, rangeContains: 7 },
-        source: { rangeStart: 0, rangeContains: 7 },
-      },
-      {
-        name: "fertilizer-to-water",
-        destination: { rangeStart: 57, rangeContains: 4 },
-        source: { rangeStart: 7, rangeContains: 4 },
-      },
-      {
-        name: "water-to-light",
-        destination: { rangeStart: 88, rangeContains: 7 },
-        source: { rangeStart: 18, rangeContains: 7 },
-      },
-      {
-        name: "water-to-light",
-        destination: { rangeStart: 18, rangeContains: 70 },
-        source: { rangeStart: 25, rangeContains: 70 },
-      },
-      {
-        name: "light-to-temperature",
-        destination: { rangeStart: 45, rangeContains: 23 },
-        source: { rangeStart: 77, rangeContains: 23 },
-      },
-      {
-        name: "light-to-temperature",
-        destination: { rangeStart: 81, rangeContains: 19 },
-        source: { rangeStart: 45, rangeContains: 19 },
-      },
-      {
-        name: "light-to-temperature",
-        destination: { rangeStart: 68, rangeContains: 13 },
-        source: { rangeStart: 64, rangeContains: 13 },
-      },
-      {
-        name: "temperature-to-humidity",
-        destination: { rangeStart: 0, rangeContains: 1 },
-        source: { rangeStart: 69, rangeContains: 1 },
-      },
-      {
-        name: "temperature-to-humidity",
-        destination: { rangeStart: 1, rangeContains: 69 },
-        source: { rangeStart: 0, rangeContains: 69 },
-      },
-      {
-        name: "humidity-to-location",
-        destination: { rangeStart: 60, rangeContains: 37 },
-        source: { rangeStart: 56, rangeContains: 37 },
-      },
-      {
-        name: "humidity-to-location",
-        destination: { rangeStart: 56, rangeContains: 4 },
-        source: { rangeStart: 93, rangeContains: 4 },
-      },
-    ],
-  });
+  expect(result).toMatchInlineSnapshot(`
+    {
+      "maps": [
+        {
+          "from": "seed",
+          "mapEntries": [
+            {
+              "destination": {
+                "rangeContains": 2,
+                "rangeStart": 50,
+              },
+              "source": {
+                "rangeContains": 2,
+                "rangeStart": 98,
+              },
+            },
+            {
+              "destination": {
+                "rangeContains": 48,
+                "rangeStart": 52,
+              },
+              "source": {
+                "rangeContains": 48,
+                "rangeStart": 50,
+              },
+            },
+          ],
+          "to": "soil",
+        },
+        {
+          "from": "soil",
+          "mapEntries": [
+            {
+              "destination": {
+                "rangeContains": 37,
+                "rangeStart": 0,
+              },
+              "source": {
+                "rangeContains": 37,
+                "rangeStart": 15,
+              },
+            },
+            {
+              "destination": {
+                "rangeContains": 2,
+                "rangeStart": 37,
+              },
+              "source": {
+                "rangeContains": 2,
+                "rangeStart": 52,
+              },
+            },
+            {
+              "destination": {
+                "rangeContains": 15,
+                "rangeStart": 39,
+              },
+              "source": {
+                "rangeContains": 15,
+                "rangeStart": 0,
+              },
+            },
+          ],
+          "to": "fertilizer",
+        },
+        {
+          "from": "fertilizer",
+          "mapEntries": [
+            {
+              "destination": {
+                "rangeContains": 8,
+                "rangeStart": 49,
+              },
+              "source": {
+                "rangeContains": 8,
+                "rangeStart": 53,
+              },
+            },
+            {
+              "destination": {
+                "rangeContains": 42,
+                "rangeStart": 0,
+              },
+              "source": {
+                "rangeContains": 42,
+                "rangeStart": 11,
+              },
+            },
+            {
+              "destination": {
+                "rangeContains": 7,
+                "rangeStart": 42,
+              },
+              "source": {
+                "rangeContains": 7,
+                "rangeStart": 0,
+              },
+            },
+            {
+              "destination": {
+                "rangeContains": 4,
+                "rangeStart": 57,
+              },
+              "source": {
+                "rangeContains": 4,
+                "rangeStart": 7,
+              },
+            },
+          ],
+          "to": "water",
+        },
+        {
+          "from": "water",
+          "mapEntries": [
+            {
+              "destination": {
+                "rangeContains": 7,
+                "rangeStart": 88,
+              },
+              "source": {
+                "rangeContains": 7,
+                "rangeStart": 18,
+              },
+            },
+            {
+              "destination": {
+                "rangeContains": 70,
+                "rangeStart": 18,
+              },
+              "source": {
+                "rangeContains": 70,
+                "rangeStart": 25,
+              },
+            },
+          ],
+          "to": "light",
+        },
+        {
+          "from": "light",
+          "mapEntries": [
+            {
+              "destination": {
+                "rangeContains": 23,
+                "rangeStart": 45,
+              },
+              "source": {
+                "rangeContains": 23,
+                "rangeStart": 77,
+              },
+            },
+            {
+              "destination": {
+                "rangeContains": 19,
+                "rangeStart": 81,
+              },
+              "source": {
+                "rangeContains": 19,
+                "rangeStart": 45,
+              },
+            },
+            {
+              "destination": {
+                "rangeContains": 13,
+                "rangeStart": 68,
+              },
+              "source": {
+                "rangeContains": 13,
+                "rangeStart": 64,
+              },
+            },
+          ],
+          "to": "temperature",
+        },
+        {
+          "from": "temperature",
+          "mapEntries": [
+            {
+              "destination": {
+                "rangeContains": 1,
+                "rangeStart": 0,
+              },
+              "source": {
+                "rangeContains": 1,
+                "rangeStart": 69,
+              },
+            },
+            {
+              "destination": {
+                "rangeContains": 69,
+                "rangeStart": 1,
+              },
+              "source": {
+                "rangeContains": 69,
+                "rangeStart": 0,
+              },
+            },
+          ],
+          "to": "humidity",
+        },
+        {
+          "from": "humidity",
+          "mapEntries": [
+            {
+              "destination": {
+                "rangeContains": 37,
+                "rangeStart": 60,
+              },
+              "source": {
+                "rangeContains": 37,
+                "rangeStart": 56,
+              },
+            },
+            {
+              "destination": {
+                "rangeContains": 4,
+                "rangeStart": 56,
+              },
+              "source": {
+                "rangeContains": 4,
+                "rangeStart": 93,
+              },
+            },
+          ],
+          "to": "location",
+        },
+      ],
+      "seeds": [
+        {
+          "rangeContains": 14,
+          "rangeStart": 79,
+        },
+        {
+          "rangeContains": 13,
+          "rangeStart": 55,
+        },
+      ],
+    }
+  `);
 });
 
 type Step = {
@@ -309,24 +481,27 @@ const findRangePaths = (seedRanges: Range[], maps: Map[]): Path[] => {
   const paths: Path[] = [];
   for (const seedRange of seedRanges) {
     for (const map of maps) {
-      // console.log({ seedRange, map });
-      const commonSourceRange = rangesOverlap(seedRange, map.source);
-      if (!commonSourceRange) {
-        continue;
-      }
-      // console.log({ commonSourceRange, seedRange });
-      const diff = map.source.rangeStart - map.destination.rangeStart;
-      paths.push([
-        {
+      for (const mapEntry of map.mapEntries) {
+        const steps: Step[] = [];
+        // console.log({ seedRange, map });
+        const commonSourceRange = rangesOverlap(seedRange, mapEntry.source);
+        if (!commonSourceRange) {
+          continue;
+        }
+        // console.log({ commonSourceRange, seedRange });
+        const diff =
+          mapEntry.source.rangeStart - mapEntry.destination.rangeStart;
+        steps.push({
           narrowedSource: commonSourceRange,
           originalSource: seedRange,
           narrowedDestination: {
             rangeStart: commonSourceRange.rangeStart - diff,
             rangeContains: commonSourceRange.rangeContains,
           },
-          originalDestination: map.destination,
-        },
-      ]);
+          originalDestination: mapEntry.destination,
+        });
+        paths.push(steps);
+      }
     }
   }
   return paths;
@@ -337,14 +512,18 @@ it("finds range paths for one seed range two maps on the same level", () => {
   ];
   const maps: Map[] = [
     {
-      name: "seed-to-soil",
-      destination: { rangeStart: 2, rangeContains: 2 },
-      source: { rangeStart: 1, rangeContains: 2 }, // 1 2 >> 2 3
-    },
-    {
-      name: "seed-to-soil",
-      destination: { rangeStart: 1, rangeContains: 1 },
-      source: { rangeStart: 3, rangeContains: 1 }, // 3 >> 1
+      from: "seed",
+      to: "soil",
+      mapEntries: [
+        {
+          destination: { rangeStart: 2, rangeContains: 2 },
+          source: { rangeStart: 1, rangeContains: 2 }, // 1 2 >> 2 3
+        },
+        {
+          destination: { rangeStart: 1, rangeContains: 1 },
+          source: { rangeStart: 3, rangeContains: 1 }, // 3 >> 1
+        },
+      ],
     },
   ];
   const result = findRangePaths(seeds, maps);
@@ -376,14 +555,18 @@ it("finds range paths for two seed ranges two maps on the same level", () => {
   ];
   const maps: Map[] = [
     {
-      name: "seed-to-soil",
-      destination: { rangeStart: 2, rangeContains: 2 },
-      source: { rangeStart: 1, rangeContains: 2 }, // 1 2 >> 2 3
-    },
-    {
-      name: "seed-to-soil",
-      destination: { rangeStart: 1, rangeContains: 6 },
-      source: { rangeStart: 3, rangeContains: 6 }, // 3 4 5 6 7 8 >> 1 2 3 4 5 6
+      from: "seed",
+      to: "soil",
+      mapEntries: [
+        {
+          destination: { rangeStart: 2, rangeContains: 2 },
+          source: { rangeStart: 1, rangeContains: 2 }, // 1 2 >> 2 3
+        },
+        {
+          destination: { rangeStart: 1, rangeContains: 6 },
+          source: { rangeStart: 3, rangeContains: 6 }, // 3 4 5 6 7 8 >> 1 2 3 4 5 6
+        },
+      ],
     },
   ];
   const result = findRangePaths(seeds, maps);
