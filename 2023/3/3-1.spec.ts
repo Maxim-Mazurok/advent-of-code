@@ -56,7 +56,7 @@ const main = (input: string) => {
     }
   }
 
-  console.log(includedNumbers);
+  // console.log(includedNumbers);
 
   return includedNumbers.reduce((a, b) => a + b, 0);
 };

@@ -52,7 +52,7 @@ export const main = (input: string) => {
     steps++;
   } while (currentNodeName !== "ZZZ");
 
-  console.log(currentNodeName);
+  // console.log(currentNodeName);
 
   return steps;
 };

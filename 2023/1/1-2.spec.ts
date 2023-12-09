@@ -1,6 +1,6 @@
 import { readFile } from "fs/promises";
 import { join } from "path";
-import { beforeAll, it } from "vitest";
+import { beforeAll, expect, it } from "vitest";
 
 let input: string;
 
@@ -53,12 +53,13 @@ it("works", async () => {
     const firstDigit = digitToNumber(digitsStart[0]);
     const lastDigit = digitToNumber(digitsEnd[0].split("").reverse().join(""));
 
-    console.log(line, firstDigit, lastDigit, digitsStart, digitsEnd);
+    // console.log(line, firstDigit, lastDigit, digitsStart, digitsEnd);
 
     const number = parseInt(`${firstDigit}${lastDigit}`);
 
     sum += number;
   }
 
-  console.log(sum);
+  // console.log(sum);
+  expect(sum).toBe(54265);
 });

@@ -2,7 +2,7 @@ import dedent from "dedent";
 import { readFile } from "fs/promises";
 import { join } from "path";
 import { expect, it } from "vitest";
-import { createMap, main, parseInput, resolveValue } from "./5-2-bad.code";
+import { createMap, main, parseInput, resolveValue } from "./5-2.code";
 
 const sampleInput = dedent(`
   seeds: 79 14 55 13

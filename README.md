@@ -4,9 +4,20 @@ These are my TypeScript solutions for the [Advent of Code](https://adventofcode.
 
 ## Structure examples
 
-- [`2023/1.input.txt`](./2023/1.input.txt) - input for the **1st day** challenge of 2023 year
-- [`2023/1-1.spec.ts`](./2023/1-1.spec.ts) - solution for the **1st part** of the **1st day** challenge of 2023 year
-- [`2023/1-2.spec.ts`](./2023/1-2.spec.ts) - solution for the **2nd part** of the **1st day** challenge of 2023 year
+For simple problems:
+
+- [`2023/1/1.input.txt`](./2023/1/1.input.txt) - **input** for the **1st day** challenge of 2023 year
+- [`2023/1/1-1.spec.ts`](./2023/1/1-1.spec.ts) - **solution** for the **1st part** of the **1st day** challenge of 2023 year
+- [`2023/1/1-2.spec.ts`](./2023/1/1-2.spec.ts) - **solution** for the **2nd part** of the **1st day** challenge of 2023 year
+- ...
+
+For more challenging problems (for example, for the **9th day** challenge of 2023 year):
+
+- [`2023/9/9.input.txt`](./2023/9/9.input.txt) - **input** for the challenge
+- [`2023/9/9-1.statement.txt`](./2023/9/9-1.statement.txt) - **statement** for the **1st part** of the challenge; useful to provide context for co-pilot
+- [`2023/9/9-1.code.ts`](./2023/9/9-1.code.ts) - **solution** for the **1st part** of the challenge
+- [`2023/9/9-1.spec.ts`](./2023/9/9-1.spec.ts) - **tests** for the **1st part** of the challenge
+- [`2023/9/9-1.ts`](./2023/9/9-1.ts) - standalone script to solve the **1st part** of the challenge; Useful for long-running solutions and debugging
 
 ## Usage
 
@@ -14,3 +25,9 @@ These are my TypeScript solutions for the [Advent of Code](https://adventofcode.
 1. (optional) `nvm i` - or use any other node version manager of choice
 1. `npm i`
 1. `npm start`
+
+To run a standalone script, use:
+
+```bash
+npx -y tsx 2023/9/9-1.ts
+```

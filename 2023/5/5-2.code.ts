@@ -81,7 +81,7 @@ export function* allSeeds(seeds: number[]) {
     const start = seeds[i]!;
     const amount = seeds[i + 1]!;
     // total += amount;
-    console.log(`Seeds range: ${seeds[i]!} - ${seeds[i]! + seeds[i + 1]!}`);
+    // console.log(`Seeds range: ${seeds[i]!} - ${seeds[i]! + seeds[i + 1]!}`);
     for (let s = start; s < start + amount; s++) {
       yield s;
     }
@@ -117,13 +117,13 @@ export const main = (input: string) => {
     const location = resolveValue(maps, seed, "seed", "location");
     if (location < minLocation) {
       minLocation = location;
-      console.log(minLocation);
+      // console.log(minLocation);
     }
   }
 
   // console.log({ total });
 
-  console.log({ seedsNumber: seedsChecked });
+  // console.log({ seedsNumber: seedsChecked });
 
   return minLocation;
 };

@@ -1,6 +1,6 @@
 import { readFile } from "fs/promises";
 import { join } from "path";
-import { beforeAll, it } from "vitest";
+import { beforeAll, expect, it } from "vitest";
 
 let input: string;
 
@@ -26,5 +26,6 @@ it("works", async () => {
     sum += number;
   }
 
-  console.log(sum);
+  // console.log(sum);
+  expect(sum).toBe(54450);
 });
