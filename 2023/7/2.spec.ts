@@ -16,7 +16,7 @@ import {
   parseInput,
   rankHands,
   strongestOfTheSameType,
-} from "./7-2.code";
+} from "./2.code";
 
 const sampleInput = dedent(`
   32T3K 765
@@ -137,6 +137,6 @@ it("works for example input", () => {
 });
 
 it.skip("works for real input", async () => {
-  const input = await readFile(join(__dirname, "7.input.txt"), "utf-8");
+  const input = await readFile(join(__dirname, "input.txt"), "utf-8");
   expect(main(input)).toBe(253253225);
 });

@@ -2,7 +2,7 @@ import dedent from "dedent";
 import { readFile } from "fs/promises";
 import { join } from "path";
 import { expect, it } from "vitest";
-import { main, parseInput } from "./8-1.code";
+import { main, parseInput } from "./1.code";
 
 const sampleInput = dedent(`
   RL
@@ -37,6 +37,6 @@ it("works for example input", () => {
 });
 
 it("works for real input", async () => {
-  const input = await readFile(join(__dirname, "8.input.txt"), "utf-8");
+  const input = await readFile(join(__dirname, "input.txt"), "utf-8");
   expect(main(input)).toBe(18113);
 });

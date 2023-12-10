@@ -2,7 +2,7 @@ import dedent from "dedent";
 import { readFile } from "fs/promises";
 import { join } from "path";
 import { expect, it } from "vitest";
-import { commonMultiplesOfArrays, main, parseInput } from "./8-2.code";
+import { commonMultiplesOfArrays, main, parseInput } from "./2.code";
 
 const sampleInput = dedent(`
 LR
@@ -49,7 +49,7 @@ it("works for example input", () => {
 });
 
 it("works for real input", async () => {
-  const input = await readFile(join(__dirname, "8.input.txt"), "utf-8");
+  const input = await readFile(join(__dirname, "input.txt"), "utf-8");
   expect(main(input)).toBe(12315788159977);
 });
 

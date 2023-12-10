@@ -8,7 +8,7 @@ import {
   main,
   parseInput,
   predictNextValue,
-} from "./9-2.code";
+} from "./2.code";
 
 const sampleInput = dedent(`
 0 3 6 9 12 15
@@ -53,6 +53,6 @@ it("works for example input", () => {
 });
 
 it("works for real input", async () => {
-  const input = await readFile(join(__dirname, "9.input.txt"), "utf-8");
+  const input = await readFile(join(__dirname, "input.txt"), "utf-8");
   expect(main(input)).toBe(995);
 });

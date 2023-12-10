@@ -5,17 +5,11 @@ import { expect, it } from "vitest";
 
 const main = (input: string) => {
   const lines = input.split("\n");
-  const cardCopies: { [card: number]: number } = {};
-
   const data = lines.map((line) => {
     const regex =
       /^Card\s+(?<card>\d+): (?<winningNumbers>(?:\s*\d+)+) \| (?<elfNumbers>(?:\s*\d+)+)$/;
     const matches = line.match(regex);
     const { card, winningNumbers, elfNumbers } = matches!.groups!;
-
-    const cardNumber = Number(card);
-
-    cardCopies[cardNumber] = 1;
 
     const winningNumbersArray = winningNumbers!.trim().split(/\s+/).map(Number);
     if (
@@ -30,7 +24,7 @@ const main = (input: string) => {
     }
 
     return {
-      card: cardNumber,
+      card: Number(card),
       winningNumbers: winningNumbersArray,
       elfNumbers: elfNumbersArray,
     };
@@ -38,26 +32,26 @@ const main = (input: string) => {
 
   // console.table(data);
 
+  let totalPoints = 0;
+
   for (const { card, winningNumbers, elfNumbers } of data) {
     let currentCardWins = 0;
-    for (const elfNumber of elfNumbers) {
+    for (const elfNumber of [...new Set(elfNumbers)]) {
       if (winningNumbers.includes(elfNumber)) {
         currentCardWins++;
       }
     }
     if (currentCardWins !== 0) {
-      for (let i = 1; i <= currentCardWins; i++) {
-        // console.log(
-        //   `Card ${card} wins ${card + i} card ${cardCopies[card]} times`
-        // );
-        cardCopies[card + i] += cardCopies[card]!;
+      let points = 1;
+      for (let i = 1; i < currentCardWins; i++) {
+        points *= 2;
       }
+      totalPoints += points;
+      // console.log(card, points);
     }
   }
 
-  // console.table(cardCopies);
-
-  return Object.values(cardCopies).reduce((acc, curr) => acc + curr, 0);
+  return totalPoints;
 };
 
 it("works for example input", () => {
@@ -69,10 +63,10 @@ it("works for example input", () => {
     Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36
     Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11
   `);
-  expect(main(input)).toBe(30);
+  expect(main(input)).toBe(13);
 });
 
 it("works for real input", async () => {
-  const input = await readFile(join(__dirname, "4.input.txt"), "utf-8");
-  expect(main(input)).toBe(5920640);
+  const input = await readFile(join(__dirname, "input.txt"), "utf-8");
+  expect(main(input)).toBe(23235);
 });

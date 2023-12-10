@@ -2,6 +2,7 @@ import dedent from "dedent";
 import { readFile } from "fs/promises";
 import { join } from "path";
 import { expect, it } from "vitest";
+import { createMap, main, parseInput, resolveValue } from "./2.code";
 
 const sampleInput = dedent(`
   seeds: 79 14 55 13
@@ -39,31 +40,6 @@ const sampleInput = dedent(`
   56 93 4
 `);
 
-const createMap = (
-  data: {
-    destinationRangeStart: number;
-    sourceRangeStart: number;
-    bothRangesLength: number;
-  }[]
-) => {
-  const map = (sourceValue: number) => {
-    for (const {
-      destinationRangeStart,
-      sourceRangeStart,
-      bothRangesLength,
-    } of data) {
-      if (
-        sourceValue >= sourceRangeStart &&
-        sourceValue < sourceRangeStart + bothRangesLength
-      ) {
-        return sourceValue - sourceRangeStart + destinationRangeStart;
-      }
-    }
-    // console.log(`No map for ${sourceValue}`);
-    return sourceValue;
-  };
-  return map;
-};
 it("creates a map function", () => {
   const map = createMap([
     {
@@ -91,55 +67,6 @@ it("creates a map function", () => {
   expect(map(99)).toBe(51);
 });
 
-const parseInput = (input: string) => {
-  const lines = input.split("\n");
-  const seeds = lines[0]!.split(": ")[1]!.split(" ").map(Number);
-  const maps = [];
-
-  const mapLines = lines.slice(1).join("\n").split("\n\n");
-  for (const mapLine of mapLines) {
-    const mapLines = mapLine.split("\n").filter(Boolean);
-    const from = mapLines[0]!.split("-to-")[0]!.split(" ")[0]!;
-    const to = mapLines[0]!.split("-to-")[1]!.split(" ")[0]!;
-    const mapData = mapLines.slice(1).map((line) => ({
-      destinationRangeStart: Number(line.split(" ")[0]!),
-      sourceRangeStart: Number(line.split(" ")[1]!),
-      bothRangesLength: Number(line.split(" ")[2]!),
-    }));
-    maps.push({
-      from,
-      to,
-      map: createMap(mapData),
-    });
-  }
-
-  return {
-    seeds,
-    maps,
-  };
-};
-
-const resolveValue = (
-  maps: {
-    from: string;
-    to: string;
-    map: (value: number) => number;
-  }[],
-  value: number,
-  from: string,
-  to: string
-): number => {
-  if (from === to) {
-    return value;
-  }
-  const map = maps.find((map) => map.from === from)!;
-  if (map.to === to) {
-    // console.log(`Map ${from} -> ${to} found: ${map.map(value)}`);
-    return map.map(value);
-  }
-  // console.log(`Map ${from} -> ${map.to} found: ${map.map(value)}`);
-  return resolveValue(maps, map.map(value), map.to, to);
-};
 it("resolves value", () => {
   const { maps } = parseInput(sampleInput);
   expect(resolveValue(maps, 79, "seed", "soil")).toBe(81);
@@ -178,23 +105,11 @@ it("resolves value", () => {
   expect(resolveValue(maps, 13, "seed", "location")).toBe(35);
 });
 
-const main = (input: string) => {
-  const { seeds, maps } = parseInput(input);
-
-  let minLocation = Infinity;
-  for (const seed of seeds) {
-    const location = resolveValue(maps, seed, "seed", "location");
-    minLocation = Math.min(minLocation, location);
-  }
-
-  return minLocation;
-};
-
 it("works for example input", () => {
-  expect(main(sampleInput)).toBe(35);
+  expect(main(sampleInput)).toBe(46);
 });
 
-it("works for real input", async () => {
-  const input = await readFile(join(__dirname, "5.input.txt"), "utf-8");
-  expect(main(input)).toBe(910845529);
+it.skip("works for real input", async () => {
+  const input = await readFile(join(__dirname, "input.txt"), "utf-8");
+  expect(main(input)).toBe(77435348);
 });
