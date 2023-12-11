@@ -35,9 +35,10 @@ it("works for example input", () => {
   expect(main(sampleInput)).toBe(374);
 });
 
-it.skip("works for real input", async () => {
+it("works for real input", async () => {
   const input = await readFile(join(__dirname, "input.txt"), "utf-8");
-  expect(main(input)).toBe(undefined);
+  expect(main(input)).toBeGreaterThan(9108609);
+  expect(main(input)).toBe(9724940);
 });
 
 it("expands universe", () => {
@@ -57,7 +58,7 @@ it("finds a path1", () => {
       y: 12,
     }
   );
-  expect(result).toBe(9);
+  expect(result).toBe(10);
 });
 it("finds a path2", () => {
   expect(
@@ -89,6 +90,36 @@ it("finds a path3", () => {
   ).toBe(17);
 });
 
+it("finds a path5", () => {
+  expect(
+    findShortestPathBetween(
+      {
+        x: 8,
+        y: 0,
+      },
+      {
+        x: 0,
+        y: 4,
+      }
+    )
+  ).toBe(12);
+});
+
+it("finds a path6", () => {
+  expect(
+    findShortestPathBetween(
+      {
+        x: 3,
+        y: 0,
+      },
+      {
+        x: 0,
+        y: 3,
+      }
+    )
+  ).toBe(6);
+});
+
 it("finds a path4", () => {
   expect(
     findShortestPathBetween(
@@ -104,397 +135,35 @@ it("finds a path4", () => {
   ).toBe(5);
 });
 
-it("getAllPairCombinations works", () => {
-  const combs = getAllPairCombinations([
-    {
-      pair: [
-        {
-          index: 1,
-          x: 1,
-          y: 1,
-        },
-        {
-          index: 2,
-          x: 2,
-          y: 2,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 1,
-          x: 1,
-          y: 1,
-        },
-        {
-          index: 3,
-          x: 3,
-          y: 3,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 1,
-          x: 1,
-          y: 1,
-        },
-        {
-          index: 4,
-          x: 4,
-          y: 4,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 2,
-          x: 2,
-          y: 2,
-        },
-        {
-          index: 3,
-          x: 3,
-          y: 3,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 2,
-          x: 2,
-          y: 2,
-        },
-        {
-          index: 4,
-          x: 4,
-          y: 4,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 3,
-          x: 3,
-          y: 3,
-        },
-        {
-          index: 4,
-          x: 4,
-          y: 4,
-        },
-      ],
-      distance: 1,
-    },
-  ]);
+// const shuffle = <T>(items: T[]): T[][] => {
+//   const getVersions = (versions: T[][] = [], number = 0): T[][] => {
+//     if (number === items.length) {
+//       return versions;
+//     }
 
-  for (const comb of combs) {
-    printCombination(comb);
-  }
-});
+//     const newVersions: T[][] = [];
+//     for (const x of items) {
+//       for (const version of versions) {
+//         if (!version.includes(x)) {
+//           newVersions.push([...version, x]);
+//         }
+//       }
+//     }
 
-it.only("getAllPairCombinations works", () => {
-  const combs = shuffle([
-    {
-      pair: [
-        {
-          index: 1,
-          x: 1,
-          y: 1,
-        },
-        {
-          index: 2,
-          x: 2,
-          y: 2,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 1,
-          x: 1,
-          y: 1,
-        },
-        {
-          index: 3,
-          x: 3,
-          y: 3,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 1,
-          x: 1,
-          y: 1,
-        },
-        {
-          index: 4,
-          x: 4,
-          y: 4,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 1,
-          x: 1,
-          y: 1,
-        },
-        {
-          index: 5,
-          x: 5,
-          y: 5,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 1,
-          x: 1,
-          y: 1,
-        },
-        {
-          index: 6,
-          x: 6,
-          y: 6,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 2,
-          x: 2,
-          y: 2,
-        },
-        {
-          index: 3,
-          x: 3,
-          y: 3,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 2,
-          x: 2,
-          y: 2,
-        },
-        {
-          index: 4,
-          x: 4,
-          y: 4,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 2,
-          x: 2,
-          y: 2,
-        },
-        {
-          index: 5,
-          x: 5,
-          y: 5,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 2,
-          x: 2,
-          y: 2,
-        },
-        {
-          index: 6,
-          x: 6,
-          y: 6,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 3,
-          x: 3,
-          y: 3,
-        },
-        {
-          index: 4,
-          x: 4,
-          y: 4,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 3,
-          x: 3,
-          y: 3,
-        },
-        {
-          index: 5,
-          x: 5,
-          y: 5,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 3,
-          x: 3,
-          y: 3,
-        },
-        {
-          index: 6,
-          x: 6,
-          y: 6,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 4,
-          x: 4,
-          y: 4,
-        },
-        {
-          index: 5,
-          x: 5,
-          y: 5,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 4,
-          x: 4,
-          y: 4,
-        },
-        {
-          index: 6,
-          x: 6,
-          y: 6,
-        },
-      ],
-      distance: 1,
-    },
-    {
-      pair: [
-        {
-          index: 5,
-          x: 5,
-          y: 5,
-        },
-        {
-          index: 6,
-          x: 6,
-          y: 6,
-        },
-      ],
-      distance: 1,
-    },
-  ]);
+//     // console.log(newVersions);
 
-  for (const comb of combs) {
-    printCombination(comb);
-  }
-});
+//     return getVersions(newVersions, number + 1);
+//   };
 
-const shufflePairs = (items: { pair: [Point, Point]; distance: number }[]) => {
-  const getVersions = (
-    versions: { pair: [Point, Point]; distance: number }[][] = [],
-    number = 0
-  ): { pair: [Point, Point]; distance: number }[][] => {
-    if (number === items.length) {
-      return versions;
-    }
+//   return getVersions(
+//     items.map((x) => [x]),
+//     1
+//   );
+// };
 
-    const newVersions: { pair: [Point, Point]; distance: number }[][] = [];
-    for (const x of items) {
-      for (const version of versions) {
-        if (!version.find((y) => pairOverlaps(x.pair, y.pair))) {
-          newVersions.push([...version, x]);
-        }
-      }
-    }
-
-    // console.log(newVersions);
-
-    return getVersions(newVersions, number + 1);
-  };
-
-  return getVersions(
-    items.map((x) => [x]),
-    1
-  );
-};
-
-const shuffle = <T>(items: T[]): T[][] => {
-  const getVersions = (versions: T[][] = [], number = 0): T[][] => {
-    if (number === items.length) {
-      return versions;
-    }
-
-    const newVersions: T[][] = [];
-    for (const x of items) {
-      for (const version of versions) {
-        if (!version.includes(x)) {
-          newVersions.push([...version, x]);
-        }
-      }
-    }
-
-    // console.log(newVersions);
-
-    return getVersions(newVersions, number + 1);
-  };
-
-  return getVersions(
-    items.map((x) => [x]),
-    1
-  );
-};
-
-it("shuffle", () => {
-  const string = "1234";
-  const result = shuffle(string.split(""));
-  console.log(result.length);
-  console.log(result.map((x) => x.join("")));
-});
+// it("shuffle", () => {
+//   const string = "1234";
+//   const result = shuffle(string.split(""));
+//   console.log(result.length);
+//   console.log(result.map((x) => x.join("")));
+// });

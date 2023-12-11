@@ -8,33 +8,63 @@ export const parseInput = (input: string): Universe => {
 
 export const main = (input: string) => {
   const universe = parseInput(input);
-  const galaxies = findAllGalaxies(universe);
+  const expandedUniverse = expandUniverse(universe);
+  const galaxies = findAllGalaxies(expandedUniverse);
   // console.log(galaxies);
   const pairs = getAllGalaxyPairs(galaxies);
   const pairsWithDistance = getGalaxyPairsWithDistance(pairs);
   // console.log(pairsWithDistance);
-  const combinations = getAllPairCombinations(pairsWithDistance);
-  // console.log(JSON.stringify(combinations, null, 2));
-  for (let i = 0; i < combinations.length; i++) {
-    const combination = combinations[i]!;
 
-    const y = combinations.find((otherCombination) => {
-      return combination.find((pair) =>
-        otherCombination.find((otherPair) =>
-          pairOverlaps(pair.pair, otherPair.pair)
-        )
-      );
-    });
-    if (y) {
-      console.log(y);
-    }
+  // const seenPairs = new Set<string>();
 
-    printCombination(combinations[i]);
-  }
-  console.log(combinations.length);
-  // const shortestCombination = findShortestCombination(combinations);
-  const sumOfDistances = findSumOfDistances(combinations);
-  return sumOfDistances;
+  // let sum = 0;
+
+  // for (let i = 0; i < pairsWithDistance.length; i++) {
+  //   // console.log(
+  //   //   pairsWithDistance[i]!.pair[0],
+  //   //   pairsWithDistance[i]!.pair[1],
+  //   //   pairsWithDistance[i]!.distance
+  //   // );
+  //   const index1Index2 = `${pairsWithDistance[i]!.pair[0].index}-${
+  //     pairsWithDistance[i]!.pair[1].index
+  //   }`;
+  //   const index2Index1 = `${pairsWithDistance[i]!.pair[1].index}-${
+  //     pairsWithDistance[i]!.pair[0].index
+  //   }`;
+  //   if (seenPairs.has(index1Index2) || seenPairs.has(index2Index1)) {
+  //     // console.log("seen");
+  //   } else {
+  //     sum += pairsWithDistance[i]!.distance;
+  //     seenPairs.add(index1Index2);
+  //     seenPairs.add(index2Index1);
+  //   }
+  // }
+
+  // return sum;
+
+  return pairsWithDistance.reduce((acc, pair) => acc + pair.distance, 0);
+  // const combinations = getAllPairCombinations(pairsWithDistance);
+  // // console.log(JSON.stringify(combinations, null, 2));
+  // for (let i = 0; i < combinations.length; i++) {
+  //   const combination = combinations[i]!;
+
+  //   const y = combinations.find((otherCombination) => {
+  //     return combination.find((pair) =>
+  //       otherCombination.find((otherPair) =>
+  //         pairOverlaps(pair.pair, otherPair.pair)
+  //       )
+  //     );
+  //   });
+  //   if (y) {
+  //     console.log(y);
+  //   }
+
+  //   printCombination(combinations[i]);
+  // }
+  // console.log(combinations.length);
+  // // const shortestCombination = findShortestCombination(combinations);
+  // const sumOfDistances = findSumOfDistances(combinations);
+  // return sumOfDistances;
 };
 
 export const findSumOfDistances = (combinations: Combination[]): number => {
@@ -65,7 +95,7 @@ export const renderUniverse = (universe: Universe) => {
 };
 
 export const expandUniverse = (universe: Universe): Universe => {
-  renderUniverse(universe);
+  // renderUniverse(universe);
 
   for (let rowIndex = 0; rowIndex < universe.length; rowIndex++) {
     if (!rowHasGalaxies(universe, rowIndex)) {
@@ -87,7 +117,7 @@ export const expandUniverse = (universe: Universe): Universe => {
     }
   }
 
-  renderUniverse(universe);
+  // renderUniverse(universe);
 
   return universe;
 };
@@ -130,24 +160,14 @@ export type Point = {
   y: number;
 };
 
-export const findShortestPathBetween = (start: Point, end: Point): number => {
+export const findShortestPathBetween = (
+  start: Pick<Point, "x" | "y">,
+  end: Pick<Point, "x" | "y">
+): number => {
   const distanceY = Math.abs(end.y - start.y);
   const distanceX = Math.abs(end.x - start.x);
 
-  // console.log({ distanceX, distanceY });
-
-  const min = Math.min(distanceX, distanceY);
-  const max = Math.max(distanceX, distanceY);
-
-  // console.log({ min, max });
-
-  const diagonal = Math.max(0, min % 2 === 0 ? min * 2 - 1 : min * 2);
-
-  const remaining = max - min;
-
-  // console.log({ diagonal, remaining });
-
-  return diagonal + remaining;
+  return distanceY + distanceX;
 };
 
 export const findAllGalaxies = (universe: Universe): Point[] => {
